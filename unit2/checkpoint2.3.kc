@@ -221,6 +221,7 @@ void exit_hypervisor()
 { 
 // Trigger exit from Hypervisor mode 
 *(unsigned char *)$D67F = $01; 
+//
 } 
 // Now we select the SYSCALL segment to hold the SYSCALL/trap entry point table.
 #pragma data_seg(Syscall)
