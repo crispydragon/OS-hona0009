@@ -246,8 +246,7 @@ print_screen(MESSAGE);
 print_nextline();
 print_screen(MESSAGE1);
 detect_devices();
-
- exit_hypervisor();
+exit_hypervisor();
 
 }
 void PAGFAULT() {
