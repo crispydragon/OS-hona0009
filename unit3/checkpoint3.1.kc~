@@ -13,67 +13,36 @@ const char* COLS = 0xd800;
 const char BLACK = 0;
 const char WHITE = 1;
 // Some text to display
-
-	unsigned char *current_screen_line = $0400; 
-	unsigned char current_screen_x = 0; 
-
-
-char[] MESSAGE = "checkpoing3.1 zhao0562";
-char[] MESSAGE1 ="testing hardware";
-unsigned short mem_start =$0800;
-unsigned short mem_end=$7FFF;
-volatile unsigned char*p;
-char error_mem =0;
-
-void test_memory(){
-	for(p =mem_start; p<mem_end;p++){
-	for(byte value =0; value<255;value++){
-	*p = value;
-	if(*p !=value){
-	print_screen("memory error at $");
-	print_hex((unsigned short)p);
-	print_nextline();
-	mem_end = (unsigned short)p-1;
-	error_mem = 1;
-	break;
-				}
-			}
-			if(error_mem ==1) break;
-		}
-		print_screen("memory start at $");
-		print_hex(mem_start);
-		print_screen(" - ");
-		print_hex(mem_end); 
+char[] MESSAGE = "Checkpoing3.1 Zhao0562";
+char[] MESSAGE1 ="this is checkpoint3.1 printing message";
+void print_on_screen(){
+  *VIC_MEMORY = 0x14;
 }
-void print_hex(unsigned short value){
-char[5] hex;
-unsigned char i;
-for(i=0;i<4;i++){
-if (value<0xa000) hex[i]='0'+(char)(value>>12); 
-else hex[i]=(char)(value>>12)-9; 
-value<<=4; 
-} 
-hex[4]=0; 
-print_screen(hex); 
-}
-void print_screen(char *MES ){
-	char* sc = current_screen_line + current_screen_x;
-	char* msg = MES;
-	while(*msg){
-		*sc++ = *msg++;
-	}
-}
-void print_nextline(){
-	current_screen_line = current_screen_line+40;}
-
 void main() {
 // Initialize screen memory, and select correct font
 *VIC_MEMORY = 0x14;
 // Fill the screen with spaces
-memset(SCREEN, ' ', 40*25);
+memset(SCREEN, '-', 40*25);
 // Set the colour of every character on the screen to white
 memset(COLS, WHITE, 40*25);
+// Print the "hello world!" message
+char* sc = SCREEN+30;  // Display it one line down on the screen
+char* msg = MESSAGE; // The messag to display
+// A simple copy routine to copy the string
+while(*msg) {
+*sc++ = *msg++;
 }
+// Loop forever showing two white lines as raster bars
+while(true) {
+if(*RASTER==54 || *RASTER==66) {
+*BGCOL = WHITE;
+} else {
+*BGCOL = BLACK;
+}
+}
+}
+
+
 // Here are a couple sample SYSCALL handlers that just display a character on the screen
 void syscall0() {
  exit_hypervisor();
@@ -216,12 +185,22 @@ void RESET() {
 memset(SCREEN, ' ', 40*25);
 // Set the colour of every character on the screen to white
 memset(COLS, WHITE, 40*25);
-print_screen(MESSAGE);
-print_nextline();
-print_screen(MESSAGE1);
-test_memory();
+// Print the "hello world!" message
+char* sc = SCREEN+40;  // Display it one line down on the screen
+char* msg = MESSAGE; // The messag to display
+// A simple copy routine to copy the string
+while(*msg) {
+*sc++ = *msg++;
+}
+// Loop forever showing two white lines as raster bars
+while(true) {
+if(*RASTER==54 || *RASTER==66) {
+*BGCOL = WHITE;
+} else {
+*BGCOL = BLACK;
+}
+}
  exit_hypervisor();
-
 }
 void PAGFAULT() {
  exit_hypervisor();
