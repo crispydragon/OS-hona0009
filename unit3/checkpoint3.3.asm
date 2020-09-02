@@ -20,7 +20,7 @@
   .label current_screen_line_11 = 8
   .label current_screen_line_12 = 8
   .label current_screen_line_16 = 8
-  .label current_screen_line_27 = 8
+  .label current_screen_line_28 = 8
   lda #<0
   sta.z p
   sta.z p+1
@@ -195,7 +195,26 @@ detect_devices: {
   __b2:
     jsr detect_vicii
     cmp #1
-    bne __b3
+    beq __b3
+    lda.z current_screen_line_16
+    sta.z current_screen_line
+    lda.z current_screen_line_16+1
+    sta.z current_screen_line+1
+    lda #<MES1
+    sta.z print_screen.msg
+    lda #>MES1
+    sta.z print_screen.msg+1
+    jsr print_screen
+  __b4:
+    lda #$10
+    clc
+    adc.z p
+    sta.z p
+    bcc !+
+    inc.z p+1
+  !:
+    jmp __b1
+  __b3:
     lda.z current_screen_line_16
     sta.z current_screen_line
     lda.z current_screen_line_16+1
@@ -211,17 +230,11 @@ detect_devices: {
     sta.z print_hex.value+1
     jsr print_hex
     jsr print_nextline
-  __b3:
-    lda #$10
-    clc
-    adc.z p
-    sta.z p
-    bcc !+
-    inc.z p+1
-  !:
-    jmp __b1
+    jmp __b4
   .segment Data
     MES: .text "vic-ii detected at $"
+    .byte 0
+    MES1: .text "nothing detected"
     .byte 0
 }
 .segment Code
