@@ -18,33 +18,37 @@ const char WHITE = 1;
 	unsigned char current_screen_x = 0; 
 
 
-char[] MESSAGE = "checkpoing3.1 zhao0562";
+char[] MESSAGE = "checkpoing3.2 zhao0562";
 char[] MESSAGE1 ="testing hardware";
-unsigned short mem_start =$0800;
-unsigned short mem_end=$7FFF;
-volatile unsigned char*p;
+unsigned short mem_start = $0800;
+unsigned short mem_end = $7FFF;
+volatile unsigned char *p;
 char error_mem =0;
 
 void test_memory(){
 	for(p =mem_start; p<mem_end;p++){
-	for(byte value =0; value<255;value++){
-	*p = value;
-	if(*p !=value){
-	print_screen("memory error at $");
-	print_hex((unsigned short)p);
-	print_nextline();
-	mem_end = (unsigned short)p-1;
-	error_mem = 1;
-	break;
-				}
+		for(byte value =0; value<=255;value++){
+			*p = value;
+			if(*p !=value){
+				print_nextline();
+				print_screen("memory error at $");
+				print_hex((unsigned short)p);
+				mem_end = (unsigned short)p-1;
+				error_mem = 1;
+				break;
 			}
-			if(error_mem ==1) break;
 		}
-		print_screen("memory start at $");
-		print_hex(mem_start);
-		print_screen(" - ");
-		print_hex(mem_end); 
+		if(error_mem ==1) {
+			break;
+		}
+	}
+	print_screen("memory found between $");
+	print_hex(mem_start);
+	print_screen(" - $");
+	print_hex(mem_end); 
 }
+
+
 void print_hex(unsigned short value){
 char[5] hex;
 unsigned char i;
@@ -54,17 +58,22 @@ else hex[i]=(char)(value>>12)-9;
 value<<=4; 
 } 
 hex[4]=0; 
-print_screen(hex); 
+print_screen(hex);
 }
+
+
 void print_screen(char *MES ){
-	char* sc = current_screen_line + current_screen_x;
 	char* msg = MES;
-	while(*msg){
-		*sc++ = *msg++;
+	while(*MES){
+		*(current_screen_line+current_screen_x) = *MES;
+		MES++;
+		current_screen_x++;
 	}
 }
 void print_nextline(){
-	current_screen_line = current_screen_line+40;}
+	current_screen_line +=40;
+	current_screen_x = 0;
+	}
 
 void main() {
 // Initialize screen memory, and select correct font
@@ -73,6 +82,21 @@ void main() {
 memset(SCREEN, ' ', 40*25);
 // Set the colour of every character on the screen to white
 memset(COLS, WHITE, 40*25);
+}
+
+void RESET() {
+// Initialize screen memory, and select correct font
+*VIC_MEMORY = 0x14;
+// Fill the screen with spaces
+memset(SCREEN, ' ', 40*25);
+// Set the colour of every character on the screen to white
+memset(COLS, WHITE, 40*25);
+print_screen(MESSAGE);
+print_nextline();
+print_screen(MESSAGE1);
+print_nextline();
+test_memory();
+exit_hypervisor();
 }
 // Here are a couple sample SYSCALL handlers that just display a character on the screen
 void syscall0() {
@@ -209,20 +233,7 @@ exit_hypervisor();
 }void syscall63() {
  exit_hypervisor();
 }
-void RESET() {
-// Initialize screen memory, and select correct font
-*VIC_MEMORY = 0x14;
-// Fill the screen with spaces
-memset(SCREEN, ' ', 40*25);
-// Set the colour of every character on the screen to white
-memset(COLS, WHITE, 40*25);
-print_screen(MESSAGE);
-print_nextline();
-print_screen(MESSAGE1);
-test_memory();
- exit_hypervisor();
 
-}
 void PAGFAULT() {
  exit_hypervisor();
 }

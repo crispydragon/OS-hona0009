@@ -44,7 +44,7 @@ void test_memory(){
 		print_hex(mem_start);
 		print_screen(" - ");
 		print_hex(mem_end); 
-	}
+}
 void print_hex(unsigned short value){
 char[5] hex;
 unsigned char i;
@@ -56,42 +56,19 @@ value<<=4;
 hex[4]=0; 
 print_screen(hex); 
 }
-void detect_devices(){
-unsigned char *p;
-for(p=$D000; p<$DFF0;p+=$10){
-if(detect_vicii((unsigned short)p)==1){
-print_screen("vic-ii detected at $");
-print_hex((unsigned short)p);
-print_nextline();
-	}
-	else print_screen("nothing detected");
-	}
-}
-
-char detect_vicii(unsigned short address){
-volatile unsigned char *p;
-unsigned char v1,v2;
-unsigned short i;
-v1=p[$12];
-for(i=1;i<1000;i++) continue;
-v2=p[$12];
-if(v2>v1){
-print_screen("Seems to be a VIC-II here");
-return 1;
-		}
-		return 2;
-}
 
 
 void print_screen(char *MES ){
-	char* sc = current_screen_line + current_screen_x;
-	char* msg = MES;
-	while(*msg){
-		*sc++ = *msg++;
+	while(*MES){
+		*(current_screen_line+current_screen_x) = *MES;
+		MES++;
+		current_screen_x++;
 	}
 }
 void print_nextline(){
-	current_screen_line = current_screen_line+40;}
+	current_screen_line +=40;
+	current_screen_x = 0;
+	}
 
 void main() {
 // Initialize screen memory, and select correct font
@@ -246,8 +223,8 @@ memset(COLS, WHITE, 40*25);
 print_screen(MESSAGE);
 print_nextline();
 print_screen(MESSAGE1);
-detect_devices();
-exit_hypervisor();
+
+ exit_hypervisor();
 
 }
 void PAGFAULT() {
