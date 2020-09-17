@@ -18,43 +18,87 @@ const char WHITE = 1;
 	unsigned char current_screen_x = 0; 
 
 
-char[] MESSAGE = "checkpoing3.1 zhao0562";
+char[] MESSAGE = "checkpoing3.3 zhao0562";
 char[] MESSAGE1 ="testing hardware";
-unsigned short mem_start =$0800;
-unsigned short mem_end=$7FFF;
-volatile unsigned char*p;
+
+unsigned short mem_start = $0800;
+unsigned short mem_end = $7FFF;
+volatile unsigned char *p;
 char error_mem =0;
 
 void test_memory(){
+
+				print_screen("startring...");
+				print_nextline();
 	for(p =mem_start; p<mem_end;p++){
-	for(byte value =0; value<255;value++){
-	*p = value;
-	if(*p !=value){
-	print_screen("memory error at $");
-	print_hex((unsigned short)p);
-	print_nextline();
-	mem_end = (unsigned short)p-1;
-	error_mem = 1;
-	break;
-				}
+		for(byte value =0; value<255;value++){
+			*p = value;
+			if(*p !=value){
+				print_nextline();
+				print_screen("memory error at $");
+				print_hex((unsigned short)p);
+				print_nextline();
+				mem_end = (unsigned short)p-1;
+				error_mem = 1;
+				break;
 			}
-			if(error_mem ==1) break;
 		}
-		print_screen("memory start at $");
-		print_hex(mem_start);
-		print_screen(" - ");
-		print_hex(mem_end); 
+		if(error_mem ==1) {
+			break;
+		}
+	}
+	print_screen("memory found between $");
+	print_hex(mem_start);
+	print_screen(" - $");
+	print_hex(mem_end); 
+	print_nextline();
 }
+
+
 void print_hex(unsigned short value){
-char[5] hex;
-unsigned char i;
-for(i=0;i<4;i++){
-if (value<0xa000) hex[i]='0'+(char)(value>>12); 
-else hex[i]=(char)(value>>12)-9; 
-value<<=4; 
-} 
-hex[4]=0; 
-print_screen(hex); 
+	char[5] hex;
+	unsigned char i;
+	for(i=0;i<4;i++){
+	if (value<0xa000) hex[i]='0'+(char)(value>>12); 
+	else hex[i]=(char)(value>>12)-9; 
+	value<<=4; 
+	} 
+	hex[4]=0; 
+	print_screen(hex);
+}
+
+void detect_devices(){
+  mem_end=$DFF0;
+  mem_start=$D000;
+  while(mem_start!=$DFF0)
+    {
+      if(detect_vicii(mem_start)==1){
+	print_screen(" $");
+	print_hex(mem_start);
+      }
+    mem_start+=$10;
+    }
+    print_nextline();
+  print_screen("finished probing for devices");
+}
+
+
+char detect_vicii(unsigned short address){
+  // Pointer where VIC-II is suspected to be 
+  volatile unsigned char *p = address; 
+  unsigned char v1,v2; 
+  unsigned short i; 
+
+  v1=p[$12]; // Read start address + $12 
+  // Wait at least 64 microseconds. 
+  for(i=1;i<1000;i++) continue; 
+  v2=p[$12]; // Read again 
+  if (v2>v1) { 
+    print_nextline();
+    print_screen("seems to be a vic-ii here at"); 
+    return 1;
+  } 
+  return 2;
 }
 
 
@@ -65,18 +109,36 @@ void print_screen(char *MES ){
 		current_screen_x++;
 	}
 }
+
+
 void print_nextline(){
 	current_screen_line +=40;
 	current_screen_x = 0;
-	}
+}
 
 void main() {
-// Initialize screen memory, and select correct font
-*VIC_MEMORY = 0x14;
-// Fill the screen with spaces
-memset(SCREEN, ' ', 40*25);
-// Set the colour of every character on the screen to white
-memset(COLS, WHITE, 40*25);
+}
+
+
+void RESET() {
+	// Initialize screen memory, and select correct font
+	*VIC_MEMORY = 0x14;
+	// Fill the screen with spaces
+	memset(SCREEN, ' ', 40*25);
+	// Set the colour of every character on the screen to white
+	memset(COLS, WHITE, 40*25);
+	
+	print_screen(MESSAGE);
+	print_nextline();
+	print_screen(MESSAGE1);
+	print_nextline();
+	
+	test_memory();
+	detect_devices();
+	
+	exit_hypervisor();
+	
+	while (true) continue;
 }
 // Here are a couple sample SYSCALL handlers that just display a character on the screen
 void syscall0() {
@@ -213,20 +275,7 @@ exit_hypervisor();
 }void syscall63() {
  exit_hypervisor();
 }
-void RESET() {
-// Initialize screen memory, and select correct font
-*VIC_MEMORY = 0x14;
-// Fill the screen with spaces
-memset(SCREEN, ' ', 40*25);
-// Set the colour of every character on the screen to white
-memset(COLS, WHITE, 40*25);
-print_screen(MESSAGE);
-print_nextline();
-print_screen(MESSAGE1);
 
- exit_hypervisor();
-
-}
 void PAGFAULT() {
  exit_hypervisor();
 }

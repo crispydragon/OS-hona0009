@@ -27,7 +27,7 @@ char error_mem =0;
 
 void test_memory(){
 	for(p =mem_start; p<mem_end;p++){
-		for(byte value =0; value<=255;value++){
+		for(byte value =0; value<255;value++){
 			*p = value;
 			if(*p !=value){
 				print_nextline();
@@ -46,6 +46,39 @@ void test_memory(){
 	print_hex(mem_start);
 	print_screen(" - $");
 	print_hex(mem_end); 
+}
+
+void detect_devices(){
+  mem_end=$DFF0;
+  mem_start=$D000;
+  while(mem_start!=$DFF0)
+    {
+      if(detect_vicii(mem_start)==1){
+	print_screen(" $");
+	print_hex(mem_start);
+      }
+    mem_start+=$10;
+    }
+  print_screen("finished probing for devices");
+}
+
+
+char detect_vicii(unsigned short address){
+  // Pointer where VIC-II is suspected to be 
+  volatile unsigned char *p = address; 
+  unsigned char v1,v2; 
+  unsigned short i; 
+
+  v1=p[$12]; // Read start address + $12 
+  // Wait at least 64 microseconds. 
+  for(i=1;i<1000;i++) continue; 
+  v2=p[$12]; // Read again 
+  if (v2>v1) { 
+    print_nextline();
+    print_screen("seems to be a vic-ii here at"); 
+    return 1;
+  } 
+  return 2;
 }
 
 
@@ -96,6 +129,8 @@ print_nextline();
 print_screen(MESSAGE1);
 print_nextline();
 test_memory();
+print_nextline();
+detect_devices();
 exit_hypervisor();
 }
 // Here are a couple sample SYSCALL handlers that just display a character on the screen

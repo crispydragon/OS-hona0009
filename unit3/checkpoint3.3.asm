@@ -15,12 +15,25 @@
   // To save writing 0x4C and 0xEA all the time, we define them as constants
   .const JMP = $4c
   .const NOP = $ea
-  .label p = $10
-  .label current_screen_line = $a
-  .label current_screen_line_11 = 8
-  .label current_screen_line_12 = 8
-  .label current_screen_line_16 = 8
-  .label current_screen_line_28 = 8
+  .label p = $d
+  .label mem_end = 9
+  .label mem_start = 2
+  .label current_screen_line = 7
+  .label current_screen_x = 6
+  .label current_screen_line_56 = 4
+  .label current_screen_line_79 = 4
+  .label current_screen_line_92 = 4
+  .label current_screen_line_93 = 4
+  .label current_screen_line_94 = 4
+  .label current_screen_line_95 = 4
+  .label current_screen_line_100 = 4
+  .label current_screen_line_101 = 4
+  .label current_screen_line_102 = 4
+  .label current_screen_line_103 = 4
+  .label current_screen_line_105 = 4
+  .label current_screen_line_106 = 4
+  .label current_screen_line_107 = 4
+  .label current_screen_line_108 = 4
   lda #<0
   sta.z p
   sta.z p+1
@@ -28,68 +41,7 @@
   rts
 .segment Code
 main: {
-    // Initialize screen memory, and select correct font
-    lda #$14
-    sta VIC_MEMORY
-    ldx #' '
-    lda #<SCREEN
-    sta.z memset.str
-    lda #>SCREEN
-    sta.z memset.str+1
-    lda #<$28*$19
-    sta.z memset.num
-    lda #>$28*$19
-    sta.z memset.num+1
-    jsr memset
-    ldx #WHITE
-    lda #<COLS
-    sta.z memset.str
-    lda #>COLS
-    sta.z memset.str+1
-    lda #<$28*$19
-    sta.z memset.num
-    lda #>$28*$19
-    sta.z memset.num+1
-    jsr memset
     rts
-}
-// Copies the character c (an unsigned char) to the first num characters of the object pointed to by the argument str.
-// memset(void* zeropage(4) str, byte register(X) c, word zeropage(2) num)
-memset: {
-    .label end = 2
-    .label dst = 4
-    .label num = 2
-    .label str = 4
-    lda.z num
-    bne !+
-    lda.z num+1
-    beq __breturn
-  !:
-    lda.z end
-    clc
-    adc.z str
-    sta.z end
-    lda.z end+1
-    adc.z str+1
-    sta.z end+1
-  __b2:
-    lda.z dst+1
-    cmp.z end+1
-    bne __b3
-    lda.z dst
-    cmp.z end
-    bne __b3
-  __breturn:
-    rts
-  __b3:
-    txa
-    ldy #0
-    sta (dst),y
-    inc.z dst
-    bne !+
-    inc.z dst+1
-  !:
-    jmp __b2
 }
 CPUKIL: {
     jsr exit_hypervisor
@@ -125,290 +77,6 @@ PAGFAULT: {
     jsr exit_hypervisor
     rts
 }
-RESET: {
-    // Initialize screen memory, and select correct font
-    lda #$14
-    sta VIC_MEMORY
-    ldx #' '
-    lda #<SCREEN
-    sta.z memset.str
-    lda #>SCREEN
-    sta.z memset.str+1
-    lda #<$28*$19
-    sta.z memset.num
-    lda #>$28*$19
-    sta.z memset.num+1
-    jsr memset
-    ldx #WHITE
-    lda #<COLS
-    sta.z memset.str
-    lda #>COLS
-    sta.z memset.str+1
-    lda #<$28*$19
-    sta.z memset.num
-    lda #>$28*$19
-    sta.z memset.num+1
-    jsr memset
-    lda #<MESSAGE
-    sta.z print_screen.msg
-    lda #>MESSAGE
-    sta.z print_screen.msg+1
-    lda #<$400
-    sta.z current_screen_line
-    lda #>$400
-    sta.z current_screen_line+1
-    jsr print_screen
-    lda #<$400
-    sta.z current_screen_line_11
-    lda #>$400
-    sta.z current_screen_line_11+1
-    jsr print_nextline
-    lda.z current_screen_line_12
-    sta.z current_screen_line
-    lda.z current_screen_line_12+1
-    sta.z current_screen_line+1
-    lda #<MESSAGE1
-    sta.z print_screen.msg
-    lda #>MESSAGE1
-    sta.z print_screen.msg+1
-    jsr print_screen
-    jsr detect_devices
-    jsr exit_hypervisor
-    rts
-}
-detect_devices: {
-    .label p = 6
-    lda #<$d000
-    sta.z p
-    lda #>$d000
-    sta.z p+1
-  __b1:
-    lda.z p+1
-    cmp #>$dff0
-    bcc __b2
-    bne !+
-    lda.z p
-    cmp #<$dff0
-    bcc __b2
-  !:
-    rts
-  __b2:
-    jsr detect_vicii
-    cmp #1
-    beq __b3
-    lda.z current_screen_line_16
-    sta.z current_screen_line
-    lda.z current_screen_line_16+1
-    sta.z current_screen_line+1
-    lda #<MES1
-    sta.z print_screen.msg
-    lda #>MES1
-    sta.z print_screen.msg+1
-    jsr print_screen
-  __b4:
-    lda #$10
-    clc
-    adc.z p
-    sta.z p
-    bcc !+
-    inc.z p+1
-  !:
-    jmp __b1
-  __b3:
-    lda.z current_screen_line_16
-    sta.z current_screen_line
-    lda.z current_screen_line_16+1
-    sta.z current_screen_line+1
-    lda #<MES
-    sta.z print_screen.msg
-    lda #>MES
-    sta.z print_screen.msg+1
-    jsr print_screen
-    lda.z p
-    sta.z print_hex.value
-    lda.z p+1
-    sta.z print_hex.value+1
-    jsr print_hex
-    jsr print_nextline
-    jmp __b4
-  .segment Data
-    MES: .text "vic-ii detected at $"
-    .byte 0
-    MES1: .text "nothing detected"
-    .byte 0
-}
-.segment Code
-print_nextline: {
-    lda #$28
-    clc
-    adc.z current_screen_line_12
-    sta.z current_screen_line_12
-    bcc !+
-    inc.z current_screen_line_12+1
-  !:
-    rts
-}
-// print_hex(word zeropage($c) value)
-print_hex: {
-    .label __3 = $12
-    .label __6 = $14
-    .label value = $c
-    ldx #0
-  __b1:
-    cpx #4
-    bcc __b2
-    lda #0
-    sta hex+4
-    lda.z current_screen_line_16
-    sta.z current_screen_line
-    lda.z current_screen_line_16+1
-    sta.z current_screen_line+1
-    lda #<hex
-    sta.z print_screen.msg
-    lda #>hex
-    sta.z print_screen.msg+1
-    jsr print_screen
-    rts
-  __b2:
-    lda.z value+1
-    cmp #>$a000
-    bcc __b4
-    bne !+
-    lda.z value
-    cmp #<$a000
-    bcc __b4
-  !:
-    ldy #$c
-    lda.z value
-    sta.z __3
-    lda.z value+1
-    sta.z __3+1
-    cpy #0
-    beq !e+
-  !:
-    lsr.z __3+1
-    ror.z __3
-    dey
-    bne !-
-  !e:
-    lda.z __3
-    sec
-    sbc #9
-    sta hex,x
-  __b5:
-    asl.z value
-    rol.z value+1
-    asl.z value
-    rol.z value+1
-    asl.z value
-    rol.z value+1
-    asl.z value
-    rol.z value+1
-    inx
-    jmp __b1
-  __b4:
-    ldy #$c
-    lda.z value
-    sta.z __6
-    lda.z value+1
-    sta.z __6+1
-    cpy #0
-    beq !e+
-  !:
-    lsr.z __6+1
-    ror.z __6
-    dey
-    bne !-
-  !e:
-    lda.z __6
-    clc
-    adc #'0'
-    sta hex,x
-    jmp __b5
-  .segment Data
-    hex: .fill 5, 0
-}
-.segment Code
-print_screen: {
-    .label sc = $12
-    .label msg = $c
-    lda.z current_screen_line
-    sta.z sc
-    lda.z current_screen_line+1
-    sta.z sc+1
-  __b1:
-    ldy #0
-    lda (msg),y
-    cmp #0
-    bne __b2
-    rts
-  __b2:
-    ldy #0
-    lda (msg),y
-    sta (sc),y
-    inc.z sc
-    bne !+
-    inc.z sc+1
-  !:
-    inc.z msg
-    bne !+
-    inc.z msg+1
-  !:
-    jmp __b1
-}
-detect_vicii: {
-    .label p = $e
-    .label v2 = $16
-    .label i = $12
-    lda #<0
-    sta.z p
-    sta.z p+1
-    ldy #$12
-    lda (p),y
-    tax
-    lda #<1
-    sta.z i
-    lda #>1
-    sta.z i+1
-  __b1:
-    lda.z i+1
-    cmp #>$3e8
-    bcc __b3
-    bne !+
-    lda.z i
-    cmp #<$3e8
-    bcc __b3
-  !:
-    ldy #$12
-    lda (p),y
-    sta.z v2
-    cpx.z v2
-    bcs b1
-    lda.z current_screen_line_16
-    sta.z current_screen_line
-    lda.z current_screen_line_16+1
-    sta.z current_screen_line+1
-    lda #<MES
-    sta.z print_screen.msg
-    lda #>MES
-    sta.z print_screen.msg+1
-    jsr print_screen
-    lda #1
-    rts
-  b1:
-    lda #2
-    rts
-  __b3:
-    inc.z i
-    bne !+
-    inc.z i+1
-  !:
-    jmp __b1
-  .segment Data
-    MES: .text "Seems to be a VIC-II here"
-    .byte 0
-}
-.segment Code
 syscall63: {
     jsr exit_hypervisor
     rts
@@ -666,8 +334,482 @@ syscall0: {
     jsr exit_hypervisor
     rts
 }
+RESET: {
+    // Initialize screen memory, and select correct font
+    lda #$14
+    sta VIC_MEMORY
+    ldx #' '
+    lda #<SCREEN
+    sta.z memset.str
+    lda #>SCREEN
+    sta.z memset.str+1
+    lda #<$28*$19
+    sta.z memset.num
+    lda #>$28*$19
+    sta.z memset.num+1
+    jsr memset
+    ldx #WHITE
+    lda #<COLS
+    sta.z memset.str
+    lda #>COLS
+    sta.z memset.str+1
+    lda #<$28*$19
+    sta.z memset.num
+    lda #>$28*$19
+    sta.z memset.num+1
+    jsr memset
+    lda #0
+    sta.z current_screen_x
+    lda #<$400
+    sta.z current_screen_line_56
+    lda #>$400
+    sta.z current_screen_line_56+1
+    lda #<MESSAGE
+    sta.z print_screen.MES
+    lda #>MESSAGE
+    sta.z print_screen.MES+1
+    jsr print_screen
+    lda #<$400
+    sta.z current_screen_line
+    lda #>$400
+    sta.z current_screen_line+1
+    jsr print_nextline
+    lda.z current_screen_line
+    sta.z current_screen_line_100
+    lda.z current_screen_line+1
+    sta.z current_screen_line_100+1
+    lda #0
+    sta.z current_screen_x
+    lda #<MESSAGE1
+    sta.z print_screen.MES
+    lda #>MESSAGE1
+    sta.z print_screen.MES+1
+    jsr print_screen
+    jsr print_nextline
+    jsr test_memory
+    jsr detect_devices
+    jsr exit_hypervisor
+  __b1:
+    jmp __b1
+}
+detect_devices: {
+    lda #0
+    sta.z current_screen_x
+    lda #<$d000
+    sta.z mem_start
+    lda #>$d000
+    sta.z mem_start+1
+  __b1:
+    lda.z mem_start+1
+    cmp #>$dff0
+    bne __b2
+    lda.z mem_start
+    cmp #<$dff0
+    bne __b2
+    jsr print_nextline
+    lda.z current_screen_line
+    sta.z current_screen_line_101
+    lda.z current_screen_line+1
+    sta.z current_screen_line_101+1
+    lda #0
+    sta.z current_screen_x
+    lda #<MES
+    sta.z print_screen.MES
+    lda #>MES
+    sta.z print_screen.MES+1
+    jsr print_screen
+    rts
+  __b2:
+    lda.z mem_start
+    sta.z detect_vicii.address
+    lda.z mem_start+1
+    sta.z detect_vicii.address+1
+    jsr detect_vicii
+    cmp #1
+    bne __b4
+    lda.z current_screen_line
+    sta.z current_screen_line_102
+    lda.z current_screen_line+1
+    sta.z current_screen_line_102+1
+    lda #<MES1
+    sta.z print_screen.MES
+    lda #>MES1
+    sta.z print_screen.MES+1
+    jsr print_screen
+    lda.z mem_start
+    sta.z print_hex.value
+    lda.z mem_start+1
+    sta.z print_hex.value+1
+    lda.z current_screen_line
+    sta.z current_screen_line_92
+    lda.z current_screen_line+1
+    sta.z current_screen_line_92+1
+    jsr print_hex
+  __b4:
+    lda #$10
+    clc
+    adc.z mem_start
+    sta.z mem_start
+    bcc !+
+    inc.z mem_start+1
+  !:
+    jmp __b1
+  .segment Data
+    MES: .text "finished probing for devices"
+    .byte 0
+    MES1: .text " $"
+    .byte 0
+}
+.segment Code
+// print_hex(word zeropage($b) value)
+print_hex: {
+    .label __3 = $12
+    .label __6 = $f
+    .label value = $b
+    ldx #0
+  __b1:
+    cpx #4
+    bcc __b2
+    lda #0
+    sta hex+4
+    lda #<hex
+    sta.z print_screen.MES
+    lda #>hex
+    sta.z print_screen.MES+1
+    jsr print_screen
+    rts
+  __b2:
+    lda.z value+1
+    cmp #>$a000
+    bcc __b4
+    bne !+
+    lda.z value
+    cmp #<$a000
+    bcc __b4
+  !:
+    ldy #$c
+    lda.z value
+    sta.z __3
+    lda.z value+1
+    sta.z __3+1
+    cpy #0
+    beq !e+
+  !:
+    lsr.z __3+1
+    ror.z __3
+    dey
+    bne !-
+  !e:
+    lda.z __3
+    sec
+    sbc #9
+    sta hex,x
+  __b5:
+    asl.z value
+    rol.z value+1
+    asl.z value
+    rol.z value+1
+    asl.z value
+    rol.z value+1
+    asl.z value
+    rol.z value+1
+    inx
+    jmp __b1
+  __b4:
+    ldy #$c
+    lda.z value
+    sta.z __6
+    lda.z value+1
+    sta.z __6+1
+    cpy #0
+    beq !e+
+  !:
+    lsr.z __6+1
+    ror.z __6
+    dey
+    bne !-
+  !e:
+    lda.z __6
+    clc
+    adc #'0'
+    sta hex,x
+    jmp __b5
+  .segment Data
+    hex: .fill 5, 0
+}
+.segment Code
+// print_screen(byte* zeropage($b) MES)
+print_screen: {
+    .label MES = $b
+  __b1:
+    ldy #0
+    lda (MES),y
+    cmp #0
+    bne __b2
+    rts
+  __b2:
+    ldy #0
+    lda (MES),y
+    ldy.z current_screen_x
+    sta (current_screen_line_56),y
+    inc.z MES
+    bne !+
+    inc.z MES+1
+  !:
+    inc.z current_screen_x
+    jmp __b1
+}
+// detect_vicii(word zeropage($f) address)
+detect_vicii: {
+    .label address = $f
+    .label v2 = $11
+    .label i = $b
+    ldy #$12
+    lda (address),y
+    tax
+    lda #<1
+    sta.z i
+    lda #>1
+    sta.z i+1
+  // Read start address + $12 
+  // Wait at least 64 microseconds. 
+  __b1:
+    lda.z i+1
+    cmp #>$3e8
+    bcc __b3
+    bne !+
+    lda.z i
+    cmp #<$3e8
+    bcc __b3
+  !:
+    ldy #$12
+    lda (address),y
+    sta.z v2
+    cpx.z v2
+    bcs b1
+    jsr print_nextline
+    lda.z current_screen_line
+    sta.z current_screen_line_103
+    lda.z current_screen_line+1
+    sta.z current_screen_line_103+1
+    lda #0
+    sta.z current_screen_x
+    lda #<MES
+    sta.z print_screen.MES
+    lda #>MES
+    sta.z print_screen.MES+1
+    jsr print_screen
+    lda #1
+    rts
+  b1:
+    lda #2
+    rts
+  __b3:
+    inc.z i
+    bne !+
+    inc.z i+1
+  !:
+    jmp __b1
+  .segment Data
+    MES: .text "seems to be a vic-ii here at"
+    .byte 0
+}
+.segment Code
+print_nextline: {
+    lda #$28
+    clc
+    adc.z current_screen_line
+    sta.z current_screen_line
+    bcc !+
+    inc.z current_screen_line+1
+  !:
+    rts
+}
+test_memory: {
+    .label __16 = $12
+    lda.z current_screen_line
+    sta.z current_screen_line_105
+    lda.z current_screen_line+1
+    sta.z current_screen_line_105+1
+    lda #0
+    sta.z current_screen_x
+    lda #<MES
+    sta.z print_screen.MES
+    lda #>MES
+    sta.z print_screen.MES+1
+    jsr print_screen
+    jsr print_nextline
+    lda #<$800
+    sta.z p
+    lda #>$800
+    sta.z p+1
+    ldx #0
+    txa
+    sta.z current_screen_x
+    lda #<$7fff
+    sta.z mem_end
+    lda #>$7fff
+    sta.z mem_end+1
+  __b1:
+    lda.z p+1
+    cmp.z mem_end+1
+    bcc b1
+    bne !+
+    lda.z p
+    cmp.z mem_end
+    bcc b1
+  !:
+  __b8:
+    lda.z current_screen_line
+    sta.z current_screen_line_106
+    lda.z current_screen_line+1
+    sta.z current_screen_line_106+1
+    lda #<MES2
+    sta.z print_screen.MES
+    lda #>MES2
+    sta.z print_screen.MES+1
+    jsr print_screen
+    lda.z current_screen_line
+    sta.z current_screen_line_94
+    lda.z current_screen_line+1
+    sta.z current_screen_line_94+1
+    lda #<$800
+    sta.z print_hex.value
+    lda #>$800
+    sta.z print_hex.value+1
+    jsr print_hex
+    lda.z current_screen_line
+    sta.z current_screen_line_108
+    lda.z current_screen_line+1
+    sta.z current_screen_line_108+1
+    lda #<MES3
+    sta.z print_screen.MES
+    lda #>MES3
+    sta.z print_screen.MES+1
+    jsr print_screen
+    lda.z mem_end
+    sta.z print_hex.value
+    lda.z mem_end+1
+    sta.z print_hex.value+1
+    lda.z current_screen_line
+    sta.z current_screen_line_95
+    lda.z current_screen_line+1
+    sta.z current_screen_line_95+1
+    jsr print_hex
+    jsr print_nextline
+    rts
+  b1:
+    lda #0
+  __b2:
+    cmp #$ff
+    bcc __b3
+  __b5:
+    cpx #1
+    bne __b7
+    jmp __b8
+  __b7:
+    inc.z p
+    bne !+
+    inc.z p+1
+  !:
+    jmp __b1
+  __b3:
+    ldy #0
+    sta (p),y
+    cmp (p),y
+    beq __b4
+    jsr print_nextline
+    lda.z current_screen_line
+    sta.z current_screen_line_107
+    lda.z current_screen_line+1
+    sta.z current_screen_line_107+1
+    lda #0
+    sta.z current_screen_x
+    lda #<MES1
+    sta.z print_screen.MES
+    lda #>MES1
+    sta.z print_screen.MES+1
+    jsr print_screen
+    lda.z p
+    sta.z print_hex.value
+    lda.z p+1
+    sta.z print_hex.value+1
+    lda.z current_screen_line
+    sta.z current_screen_line_93
+    lda.z current_screen_line+1
+    sta.z current_screen_line_93+1
+    jsr print_hex
+    jsr print_nextline
+    lda.z p
+    sta.z __16
+    lda.z p+1
+    sta.z __16+1
+    lda.z __16
+    sec
+    sbc #1
+    sta.z mem_end
+    lda.z __16+1
+    sbc #0
+    sta.z mem_end+1
+    lda #0
+    sta.z current_screen_x
+    ldx #1
+    jmp __b5
+  __b4:
+    clc
+    adc #1
+    jmp __b2
+  .segment Data
+    MES: .text "startring..."
+    .byte 0
+    MES1: .text "memory error at $"
+    .byte 0
+    MES2: .text "memory found between $"
+    .byte 0
+    MES3: .text " - $"
+    .byte 0
+}
+.segment Code
+// Copies the character c (an unsigned char) to the first num characters of the object pointed to by the argument str.
+// memset(void* zeropage($f) str, byte register(X) c, word zeropage($b) num)
+memset: {
+    .label end = $b
+    .label dst = $f
+    .label num = $b
+    .label str = $f
+    lda.z num
+    bne !+
+    lda.z num+1
+    beq __breturn
+  !:
+    lda.z end
+    clc
+    adc.z str
+    sta.z end
+    lda.z end+1
+    adc.z str+1
+    sta.z end+1
+  __b2:
+    lda.z dst+1
+    cmp.z end+1
+    bne __b3
+    lda.z dst
+    cmp.z end
+    bne __b3
+  __breturn:
+    rts
+  __b3:
+    txa
+    ldy #0
+    sta (dst),y
+    inc.z dst
+    bne !+
+    inc.z dst+1
+  !:
+    jmp __b2
+}
 .segment Data
-  MESSAGE: .text "checkpoing3.1 zhao0562"
+  MESSAGE: .text "checkpoing3.3 zhao0562"
   .byte 0
   MESSAGE1: .text "testing hardware"
   .byte 0
