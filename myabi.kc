@@ -1,0 +1,44 @@
+void enable_syscalls(){
+	*(unsigned char *)$D02F = $47;
+	*(unsigned char *)$D02F = $53;
+}
+
+// checkpoint 4.4
+void print_string(char *string){
+
+ // Print message
+    char* sc = SCREEN+40*2;
+    char* msg = MESSAGE;
+    while(*msg) {
+        *sc++ = *msg++;
+    }
+
+}
+
+
+void call_syscall00(){
+	enable_syscalls();
+  *(unsigned char *)$D640 = $00 ;
+  asm { nop }
+}
+
+
+void call_syscall01(){
+	enable_syscalls();
+  *(unsigned char *)$D641 = $01;
+  asm { nop }
+}
+
+const unsigned short SCREEN = $0400;
+char[] MESSAGE = "this is print by abi checkpoint 4.4";
+
+
+
+// for checkpoint 4.4
+void call_syscall02(){
+	print_string(MESSAGE);
+  *(unsigned char *)$D642 = $02;
+  asm { nop }
+}
+
+
